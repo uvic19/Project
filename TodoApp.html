@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes App</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4fc08d;
+            --background-color: #f9f9f9;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .app-description {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .note-container {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .note-title {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.2rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+
+        .note-content {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .save-btn {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .share-btn {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .clear-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .note-list {
+            margin-top: 2rem;
+        }
+
+        .saved-note {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .saved-note h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .saved-note p {
+            white-space: pre-wrap;
+        }
+
+        .delete-note {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: none;
+            z-index: 100;
+        }
+
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .share-link {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .close-modal {
+            background-color: #dddddd;
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .button-container {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Notely</h1>
+            <p class="app-description">Create, save, and share your notes with ease</p>
+        </header>
+
+        <div class="note-container">
+            <input type="text" class="note-title" id="noteTitle" placeholder="Note Title">
+            <textarea class="note-content" id="noteContent" placeholder="Write your note here..."></textarea>
+            <div class="button-container">
+                <button class="save-btn" id="saveNote">Save Note</button>
+                <button class="share-btn" id="shareNote">Share Note</button>
+                <button class="clear-btn" id="clearNote">Clear</button>
+            </div>
+        </div>
+
+        <div class="note-list" id="noteList">
+            <!-- Saved notes will appear here -->
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="share-modal" id="shareModal">
+        <div class="modal-content">
+            <h2>Share Your Note</h2>
+            <p>Copy the link below to share this note:</p>
+            <input type="text" class="share-link" id="shareLink" readonly>
+            <div class="button-container">
+                <button id="copyLink">Copy Link</button>
+                <button class="close-modal" id="closeModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize notes array from localStorage or create empty array
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        
+        // DOM elements
+        const noteTitleInput = document.getElementById('noteTitle');
+        const noteContentInput = document.getElementById('noteContent');
+        const saveNoteBtn = document.getElementById('saveNote');
+        const shareNoteBtn = document.getElementById('shareNote');
+        const clearNoteBtn = document.getElementById('clearNote');
+        const noteListContainer = document.getElementById('noteList');
+        const toast = document.getElementById('toast');
+        const shareModal = document.getElementById('shareModal');
+        const shareLinkInput = document.getElementById('shareLink');
+        const copyLinkBtn = document.getElementById('copyLink');
+        const closeModalBtn = document.getElementById('closeModal');
+        
+        // Current note for editing/sharing
+        let currentNoteId = null;
+        
+        // Load notes when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            renderNotes();
+            
+            // Check if URL has shared note parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedTitle = urlParams.get('title');
+            const sharedContent = urlParams.get('content');
+            
+            if (sharedTitle && sharedContent) {
+                noteTitleInput.value = decodeURIComponent(sharedTitle);
+                noteContentInput.value = decodeURIComponent(sharedContent);
+                showToast('Shared note loaded!');
+            }
+        });
+        
+        // Save note
+        saveNoteBtn.addEventListener('click', () => {
+            const title = noteTitleInput.value.trim();
+            const content = noteContentInput.value.trim();
+            
+            if (!title || !content) {
+                showToast('Please enter both title and content');
+                return;
+            }
+            
+            if (currentNoteId !== null) {
+                // Update existing note
+                const noteIndex = notes.findIndex(note => note.id === currentNoteId);
+                if (noteIndex !== -1) {
+                    notes[noteIndex] = {
+                        id: currentNoteId,
+                        title,
+                        content,
+                        date: new Date().toLocaleString()
+                    };
+                    showToast('Note updated!');
+                }
+            } else {
+                // Add new note
+                const newNote = {
+                    id: Date.now(),
+                    title,
+                    content,
+                    date: new Date().toLocaleString()
+                };
+                notes.unshift(newNote); // Add to beginning of array
+                showToast('Note saved!');
+            }
+            
+            // Save to localStorage and reset form
+            saveNotesToLocalStorage();
+            renderNotes();
+            clearForm();
+        });
+        
+        // Share note
+        shareNoteBtn.addEventListener('click', () => {
+            const title = noteTitleInput.value.trim();
+            const content = noteContentInput.value.trim();
+            
+            if (!title || !content) {
+                showToast('Please enter both title and content before sharing');
+                return;
+            }
+            
+            // Create shareable URL with note data
+            const shareUrl = `${window.location.origin}${window.location.pathname}?title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}`;
+            
+            // Show sharing modal
+            shareLinkInput.value = shareUrl;
+            shareModal.style.display = 'flex';
+        });
+        
+        // Copy link button
+        copyLinkBtn.addEventListener('click', () => {
+            shareLinkInput.select();
+            document.execCommand('copy');
+            showToast('Link copied to clipboard!');
+        });
+        
+        // Close modal button
+        closeModalBtn.addEventListener('click', () => {
+            shareModal.style.display = 'none';
+        });
+        
+        // Close modal if clicked outside
+        shareModal.addEventListener('click', (e) => {
+            if (e.target === shareModal) {
+                shareModal.style.display = 'none';
+            }
+        });
+        
+        // Clear note form
+        clearNoteBtn.addEventListener('click', clearForm);
+        
+        // Clear form and reset current note
+        function clearForm() {
+            noteTitleInput.value = '';
+            noteContentInput.value = '';
+            currentNoteId = null;
+            saveNoteBtn.textContent = 'Save Note';
+        }
+        
+        // Render all notes to the note list
+        function renderNotes() {
+            noteListContainer.innerHTML = '';
+            
+            if (notes.length === 0) {
+                noteListContainer.innerHTML = '<p>No saved notes yet. Create your first note!</p>';
+                return;
+            }
+            
+            notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'saved-note';
+                noteElement.innerHTML = `
+                    <button class="delete-note" data-id="${note.id}">✕</button>
+                    <h3>${note.title}</h3>
+                    <p>${note.content}</p>
+                    <small>Last updated: ${note.date}</small>
+                `;
+                
+                noteListContainer.appendChild(noteElement);
+                
+                // Add click event to load note for editing
+                noteElement.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('delete-note')) {
+                        loadNoteForEditing(note.id);
+                    }
+                });
+            });
+            
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-note').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const noteId = parseInt(e.target.getAttribute('data-id'));
+                    deleteNote(noteId);
+                });
+            });
+        }
+        
+        // Load note for editing
+        function loadNoteForEditing(noteId) {
+            const note = notes.find(note => note.id === noteId);
+            if (note) {
+                noteTitleInput.value = note.title;
+                noteContentInput.value = note.content;
+                currentNoteId = noteId;
+                saveNoteBtn.textContent = 'Update Note';
+                
+                // Scroll to top of form
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        // Delete note
+        function deleteNote(noteId) {
+            if (confirm('Are you sure you want to delete this note?')) {
+                notes = notes.filter(note => note.id !== noteId);
+                saveNotesToLocalStorage();
+                renderNotes();
+                showToast('Note deleted!');
+                
+                // If the deleted note was being edited, clear the form
+                if (currentNoteId === noteId) {
+                    clearForm();
+                }
+            }
+        }
+        
+        // Save notes to localStorage
+        function saveNotesToLocalStorage() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+        
+        // Show toast message
+        function showToast(message) {
+            toast.textContent = message;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
